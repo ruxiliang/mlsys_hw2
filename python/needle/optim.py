@@ -25,7 +25,14 @@ class SGD(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for param in self.params:
+            param_grad = param.grad
+            if param not in self.u:
+                self.u[param] = (1 - self.momentum) * (param_grad.data + self.weight_decay * param.data)
+            else:
+                self.u[param] = self.momentum * self.u[param].data + (1 - self.momentum) * (param_grad.data + self.weight_decay * param.data)
+            u = self.u[param]
+            param.data = (param - self.lr * u).detach()
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):
@@ -60,5 +67,14 @@ class Adam(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.t += 1
+        for param in self.params:
+            param_grad = param.grad
+            total_grad = (param_grad + self.weight_decay * param) if self.weight_decay != 0 else param_grad
+            total_grad_sq_2 = total_grad ** 2
+            self.m[param] = (1 - self.beta1) * total_grad if param not in self.m else self.beta1 * self.m[param] + (1 - self.beta1) * total_grad
+            self.v[param] = (1 - self.beta2) * total_grad_sq_2 if param not in self.v else self.beta2 * self.v[param] + (1 - self.beta2) * total_grad_sq_2
+            u = (self.m[param] / (1 - self.beta1 ** self.t))
+            v = (self.v[param] / (1 - self.beta2 ** self.t))
+            param.data = (param.data - self.lr * u.data / (v.data ** 0.5 + self.eps)).detach()
         ### END YOUR SOLUTION
